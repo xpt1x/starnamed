@@ -27,3 +27,11 @@ docker_build_all: 1013 1018 1105
 
 print_version:
 	docker run starname/local:$${STARNAME_VERSION}
+
+branch:
+	DOCKER_BUILDKIT=1 docker build --progress=plain -t ${DOCKER_TAG_NAME}:branch \
+	--build-arg STARNAME_VERSION=$(shell git branch --show-current) \
+	. -f Dockerfile.local
+
+pbranch:
+	env STARNAME_VERSION=branch make print_version
