@@ -1,0 +1,27 @@
+FROM golang:1.19-rc-buster as build
+
+ARG GO_VERSION=1.19-rc-buster
+ARG STARNAME_VERSION
+
+
+WORKDIR /app
+RUN git clone https://github.com/iov-one/starnamed.git
+
+ADD https://github.com/CosmWasm/wasmvm/releases/download/v0.14.0/libwasmvm_muslc.a /lib/libwasmvm_muslc.a
+
+WORKDIR /app/starnamed
+RUN echo "Building the starname ${STARNAME_VERSION}"
+RUN git fetch --all --tags \
+    && git checkout tags/$STARNAME_VERSION -b $STARNAME_VERSION
+
+RUN --mount=type=cache,target=/root/.cache/go-build \ 
+    LEDGER_ENABLED=false BUILD_TAGS=muslc make build
+
+RUN chmod +x /app/starnamed/build/starnamed \
+    && /app/starnamed/build/starnamed version \
+    && cp /app/starnamed/build/starnamed /usr/bin/starnamed
+
+COPY entrypoint.sh /app/entrypoint.sh
+WORKDIR /app
+ENTRYPOINT [ "/bin/bash" , "/app/entrypoint.sh" ]
+CMD [ "version" ]
